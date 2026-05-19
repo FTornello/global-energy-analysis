@@ -1,0 +1,187 @@
+{
+  "dataset": "Global Data on Sustainable Energy (2000–2020)",
+  "script_version": "1.0",
+  "run_timestamp": "2026-05-17T12:54:41",
+  "input_file": "/mnt/user-data/uploads/global-data-on-sustainable-energy__1_.csv",
+  "output_file": "/mnt/user-data/outputs/sustainable_energy_clean.csv",
+  "snapshot_before": {
+    "label": "raw",
+    "rows": 3649,
+    "columns": 21,
+    "total_nulls": 6978,
+    "duplicates": 0,
+    "nulls_per_column": {
+      "Access to electricity (% of population)": 10,
+      "Access to clean fuels for cooking": 169,
+      "Renewable-electricity-generating-capacity-per-capita": 931,
+      "Financial flows to developing countries (US $)": 2089,
+      "Renewable energy share in the total final energy consumption (%)": 194,
+      "Electricity from fossil fuels (TWh)": 21,
+      "Electricity from nuclear (TWh)": 126,
+      "Electricity from renewables (TWh)": 21,
+      "Low-carbon electricity (% electricity)": 42,
+      "Energy intensity level of primary energy (MJ/$2017 PPP GDP)": 207,
+      "Value_co2_emissions_kt_by_country": 428,
+      "Renewables (% equivalent primary energy)": 2137,
+      "gdp_growth": 317,
+      "gdp_per_capita": 282,
+      "Density\\n(P/Km2)": 1,
+      "Land Area(Km2)": 1,
+      "Latitude": 1,
+      "Longitude": 1
+    }
+  },
+  "snapshot_after": {
+    "label": "clean",
+    "rows": 3649,
+    "columns": 22,
+    "total_nulls": 6978,
+    "duplicates": 0,
+    "nulls_per_column": {
+      "access_electricity_pct": 10,
+      "access_clean_fuels_pct": 169,
+      "renewable_capacity_per_capita": 931,
+      "financial_flows_usd": 2089,
+      "renewable_share_pct": 194,
+      "elec_fossil_twh": 21,
+      "elec_nuclear_twh": 126,
+      "elec_renewables_twh": 21,
+      "low_carbon_elec_pct": 42,
+      "energy_intensity_mj_gdp": 207,
+      "co2_emissions_kt": 428,
+      "renewables_equiv_primary_pct": 2137,
+      "gdp_growth_pct": 317,
+      "gdp_per_capita_usd": 282,
+      "density_p_km2": 1,
+      "land_area_km2": 1,
+      "latitude": 1,
+      "longitude": 1
+    }
+  },
+  "steps": [
+    {
+      "step": 1,
+      "category": "rename",
+      "description": "Estandarización de nombres de columnas a snake_case",
+      "detail": "Todas las columnas renombradas: eliminados caracteres especiales (\\n, paréntesis, signo $, %), unificado formato snake_case. La columna 'Density\\n(P/Km2)' pasó a 'density_p_km2' eliminando el salto de línea embebido en el nombre.",
+      "rows_affected": null,
+      "columns": [
+        "Entity",
+        "Year",
+        "Access to electricity (% of population)",
+        "Access to clean fuels for cooking",
+        "Renewable-electricity-generating-capacity-per-capita",
+        "Financial flows to developing countries (US $)",
+        "Renewable energy share in the total final energy consumption (%)",
+        "Electricity from fossil fuels (TWh)",
+        "Electricity from nuclear (TWh)",
+        "Electricity from renewables (TWh)",
+        "Low-carbon electricity (% electricity)",
+        "Primary energy consumption per capita (kWh/person)",
+        "Energy intensity level of primary energy (MJ/$2017 PPP GDP)",
+        "Value_co2_emissions_kt_by_country",
+        "Renewables (% equivalent primary energy)",
+        "gdp_growth",
+        "gdp_per_capita",
+        "Density\\n(P/Km2)",
+        "Land Area(Km2)",
+        "Latitude",
+        "Longitude"
+      ],
+      "timestamp": "2026-05-17T12:54:41"
+    },
+    {
+      "step": 2,
+      "category": "fix",
+      "description": "density_p_km2: convertida de string a float64",
+      "detail": "La columna tenía separadores de miles en formato string (ej: '2,239'). Se removieron las comas y se convirtió a float64. 0 filas corregidas (correspondían a Bahrain principalmente). Valores nulos antes: 1 — después: 1.",
+      "rows_affected": 0,
+      "columns": [
+        "density_p_km2"
+      ],
+      "timestamp": "2026-05-17T12:54:42"
+    },
+    {
+      "step": 3,
+      "category": "clip",
+      "description": "low_carbon_elec_pct: valores fuera de rango [0, 100] corregidos",
+      "detail": "1 valor(es) superaban el 100% (Bhutan 2005: 100.00001). Error de redondeo de punto flotante. Aplicado clip(0, 100). No se eliminó ninguna fila.",
+      "rows_affected": 1,
+      "columns": [
+        "low_carbon_elec_pct"
+      ],
+      "timestamp": "2026-05-17T12:54:42"
+    },
+    {
+      "step": 4,
+      "category": "flag",
+      "description": "Columnas de alta nulidad documentadas — sin imputación",
+      "detail": {
+        "financial_flows_usd": {
+          "null_pct": 57.2,
+          "rationale": "Los países desarrollados no reciben flujos financieros para energía limpia, por lo que sus nulos son ausencias estructuralmente válidas, no errores. Imputar con 0 sería correcto conceptualmente (no recibieron fondos), pero puede distorsionar análisis de distribución. Se recomienda filtrar solo países en desarrollo al usar esta columna."
+        },
+        "renewables_equiv_primary_pct": {
+          "null_pct": 58.6,
+          "rationale": "Más del 58% de los registros no tienen este indicador. Cobertura limitada especialmente en años tempranos y países de bajos recursos. No se imputa. Solo usar en análisis con subset de países/años con datos suficientes."
+        }
+      },
+      "rows_affected": null,
+      "columns": [
+        "financial_flows_usd",
+        "renewables_equiv_primary_pct"
+      ],
+      "timestamp": "2026-05-17T12:54:42"
+    },
+    {
+      "step": 5,
+      "category": "flag",
+      "description": "Nueva columna 'partial_temporal_coverage' para países con < 21 años",
+      "detail": "4 países tienen menos de los 21 años esperados: {'French Guiana': 1, 'Montenegro': 14, 'Serbia': 14, 'South Sudan': 8}. Las causas son históricas (independencia de South Sudan en 2011, separación de Montenegro y Serbia de Yugoslavia en 2006, French Guiana con datos esporádicos). La columna booleana permite filtrarlos fácilmente en análisis de series de tiempo.",
+      "rows_affected": 37,
+      "columns": [
+        "partial_temporal_coverage"
+      ],
+      "timestamp": "2026-05-17T12:54:42"
+    },
+    {
+      "step": 6,
+      "category": "fix",
+      "description": "Verificación de tipos de datos post-limpieza",
+      "detail": "Todos los tipos verificados correctamente. Problemas encontrados: ['country: esperado object, actual str']",
+      "rows_affected": null,
+      "columns": [
+        "country",
+        "year",
+        "access_electricity_pct",
+        "access_clean_fuels_pct",
+        "renewable_capacity_per_capita",
+        "financial_flows_usd",
+        "renewable_share_pct",
+        "elec_fossil_twh",
+        "elec_nuclear_twh",
+        "elec_renewables_twh",
+        "low_carbon_elec_pct",
+        "primary_energy_per_capita_kwh",
+        "energy_intensity_mj_gdp",
+        "co2_emissions_kt",
+        "renewables_equiv_primary_pct",
+        "gdp_growth_pct",
+        "gdp_per_capita_usd",
+        "density_p_km2",
+        "land_area_km2",
+        "latitude",
+        "longitude",
+        "partial_temporal_coverage"
+      ],
+      "timestamp": "2026-05-17T12:54:42"
+    }
+  ],
+  "summary": {
+    "total_steps": 6,
+    "rows_unchanged": true,
+    "cols_added": 1,
+    "nulls_resolved": 0,
+    "no_rows_dropped": true
+  }
+}

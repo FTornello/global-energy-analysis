@@ -1,0 +1,43 @@
+country,cluster_2000,cluster_2019,from_name,to_name
+Ireland,0,1,Emergentes fósiles,Desarrollados alto consumo
+Australia,0,1,Emergentes fósiles,Desarrollados alto consumo
+United Kingdom,0,1,Emergentes fósiles,Desarrollados alto consumo
+New Caledonia,0,1,Emergentes fósiles,Desarrollados alto consumo
+Malta,0,1,Emergentes fósiles,Desarrollados alto consumo
+Germany,0,1,Emergentes fósiles,Desarrollados alto consumo
+Cayman Islands,0,1,Emergentes fósiles,Desarrollados alto consumo
+Netherlands,0,1,Emergentes fósiles,Desarrollados alto consumo
+Trinidad and Tobago,0,1,Emergentes fósiles,Desarrollados alto consumo
+Denmark,0,1,Emergentes fósiles,Desarrollados alto consumo
+Hungary,0,2,Emergentes fósiles,Transición renovable
+Ukraine,0,2,Emergentes fósiles,Transición renovable
+Portugal,0,2,Emergentes fósiles,Transición renovable
+Romania,0,2,Emergentes fósiles,Transición renovable
+Spain,0,2,Emergentes fósiles,Transición renovable
+Bulgaria,0,2,Emergentes fósiles,Transición renovable
+Japan,1,0,Desarrollados alto consumo,Emergentes fósiles
+Chile,2,0,Transición renovable,Emergentes fósiles
+Philippines,2,0,Transición renovable,Emergentes fósiles
+Suriname,2,0,Transición renovable,Emergentes fósiles
+Austria,2,1,Transición renovable,Desarrollados alto consumo
+New Zealand,2,1,Transición renovable,Desarrollados alto consumo
+France,2,1,Transición renovable,Desarrollados alto consumo
+Mongolia,3,0,Pobreza energética,Emergentes fósiles
+India,3,0,Pobreza energética,Emergentes fósiles
+Bangladesh,3,0,Pobreza energética,Emergentes fósiles
+Equatorial Guinea,3,0,Pobreza energética,Emergentes fósiles
+Botswana,3,0,Pobreza energética,Emergentes fósiles
+Indonesia,3,0,Pobreza energética,Emergentes fósiles
+Sri Lanka,3,2,Pobreza energética,Transición renovable
+Nepal,3,2,Pobreza energética,Transición renovable
+Samoa,3,2,Pobreza energética,Transición renovable
+Ghana,3,2,Pobreza energética,Transición renovable
+Honduras,3,2,Pobreza energética,Transición renovable
+Guatemala,3,2,Pobreza energética,Transición renovable
+Cambodia,3,2,Pobreza energética,Transición renovable
+Eswatini,3,2,Pobreza energética,Transición renovable
+Namibia,3,2,Pobreza energética,Transición renovable
+Pakistan,3,2,Pobreza energética,Transición renovable
+Bhutan,3,2,Pobreza energética,Transición renovable
+Afghanistan,3,2,Pobreza energética,Transición renovable
+Nicaragua,3,2,Pobreza energética,Transición renovable
