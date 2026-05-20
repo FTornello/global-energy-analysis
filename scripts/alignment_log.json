@@ -1,0 +1,27 @@
+{
+  "rows": 528,
+  "countries": 176,
+  "years": [
+    2021,
+    2022,
+    2023
+  ],
+  "columns": [
+    "country",
+    "year",
+    "access_electricity_pct",
+    "low_carbon_elec_pct",
+    "renewable_share_pct",
+    "energy_intensity_mj_gdp",
+    "primary_energy_per_capita_kwh",
+    "gdp_growth_pct"
+  ],
+  "detected_owid_columns": {
+    "low_carbon_elec_pct": "low_carbon_share_elec",
+    "renewable_share_pct": "other_renewables_share_elec",
+    "primary_energy_per_capita_kwh": "energy_per_capita",
+    "energy_intensity_mj_gdp": "energy_per_gdp",
+    "gdp_per_capita_usd": null
+  },
+  "missing_countries": []
+}
