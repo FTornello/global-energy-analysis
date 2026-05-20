@@ -142,6 +142,12 @@ python 03_clustering_dynamics.py
 python 04_feature_engineering.py
 python 05_regression_analysis.py
 python 06_case_studies.py
+python 07_validation_step1_explore.py
+python 08_validation_step2_align.py
+python 08b_validation_step2b_gdp.py
+python 09_validation_step3_predict.py
+python 10_validation_step4_visualize.py
+python 11_score_weights_validation.py
 ```
 
 Each script prints a summary to the console and saves outputs to the working directory.
@@ -211,3 +217,29 @@ The world continued improving through 2022, with a slight pullback in 2023 as re
 ### Validation scripts
 Scripts 07–10 in the `scripts/` folder cover the full validation pipeline:
 `07_validation_step1_explore.py` → `08_validation_step2_align.py` → `08b_validation_step2b_gdp.py` → `09_validation_step3_predict.py` → `10_validation_step4_visualize.py`
+
+---
+
+## Score Weights Validation
+
+**Script:** `11_score_weights_validation.py`
+**Output:** `weights_validation_report.pdf`, `score_weights_comparison.csv`
+
+The `transition_score` was built using manually chosen weights (0.30 / 0.45 / 0.25). A natural question is: were those weights justified, or were they arbitrary?
+
+To answer this, we extracted the normalized coefficients that the Ridge model assigned to the same three variables independently, and compared them against our manual weights.
+
+| Variable | Manual (V1) | Ridge (V2) | Delta |
+|----------|-------------|------------|-------|
+| Electricity access | 0.300 | 0.292 | −0.008 |
+| Low-carbon electricity | 0.450 | 0.466 | +0.016 |
+| GDP per capita (log) | 0.250 | 0.243 | −0.007 |
+
+**Results:**
+- Correlation between score V1 and V2: **r = 0.9994**
+- Mean difference: **0.70 points** (on a 0–100 scale)
+- Maximum difference: **1.51 points**
+- Countries that changed more than 5 ranking positions: **11 / 175**
+- The 5 reference cases (Argentina, Spain, India, Japan, Cambodia) moved **0 or 1 position**
+
+The manual weights and the mathematically derived weights produce scores with near-perfect correlation. This validates that the conceptual reasoning behind the original weight choices was capturing the real structure of the data.
