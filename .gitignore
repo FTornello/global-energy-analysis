@@ -1,1 +1,4 @@
-.DS_Store
+data/owid_raw.csv
+scripts/*.csv
+scripts/*.pdf
+scripts/*.json
