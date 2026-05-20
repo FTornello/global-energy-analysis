@@ -159,3 +159,55 @@ Covers 176 countries, 2000–2020, with indicators for electricity access, renew
 ## Author
 
 Francisco Tornello — Data Analytics project (2026)
+
+---
+
+## Validation: Out-of-Sample Testing (2021–2023)
+
+The model trained on 2000–2020 data was tested against new data from 2021–2023 using two sources: Our World in Data (energy indicators) and World Bank (electricity access).
+
+### Data sources for validation
+- **Our World in Data** — energy dataset (github.com/owid/energy-data), updated through 2024
+- **World Bank API** — electricity access indicator (EG.ELC.ACCS.ZS)
+
+### Results
+
+| Metric | Value |
+|--------|-------|
+| MAE original (2019, CV) | 5.22 points |
+| MAE validation — complete data (148 countries) | **9.28 points** |
+| MAE validation — all countries (176) | 21.25 points |
+| Countries with complete data | 148 / 176 (56%) |
+
+The high MAE across all countries is driven by the 44% without GDP data — for those, the model had to predict without its most important feature. The fair comparison is 9.28 vs 5.22: moderate degradation over a period that included COVID-19 and the 2022 energy crisis.
+
+### Global trend (median transition_score)
+
+| Year | Score |
+|------|-------|
+| 2019 | 54.5 |
+| 2021 | 57.1 |
+| 2022 | 57.5 |
+| 2023 | 56.2 |
+
+The world continued improving through 2022, with a slight pullback in 2023 as residual effects of the energy crisis persisted.
+
+### 5 reference cases (2019 → 2023)
+
+| Country | 2019 | 2023 | Change |
+|---------|------|------|--------|
+| Japan | 62.7 | 55.9 | −6.8 |
+| Spain | 76.4 | 74.8 | −1.5 |
+| Cambodia | 58.8 | 60.0 | +1.2 |
+| Argentina | 60.4 | 60.9 | +0.4 |
+| India | 49.3 | 52.2 | +2.9 |
+
+**Japan** continued declining — fossil dependency post-Fukushima compounded by the 2022 gas crisis.
+**Spain** dipped in 2022 and recovered in 2023 — the crisis was visible but not structural.
+**India** kept improving slowly — solar expansion offsetting continued coal dependency.
+**Argentina** barely moved — consistent with its historical pattern of macro-driven stagnation.
+**Cambodia** slowed down in 2023 after strong growth — possible fossil expansion to sustain economic growth.
+
+### Validation scripts
+Scripts 07–10 in the `scripts/` folder cover the full validation pipeline:
+`07_validation_step1_explore.py` → `08_validation_step2_align.py` → `08b_validation_step2b_gdp.py` → `09_validation_step3_predict.py` → `10_validation_step4_visualize.py`
