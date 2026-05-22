@@ -354,11 +354,79 @@ Un país puede tener alto desarrollo con electricidad sucia (Qatar, EE.UU.) o ba
 
 ---
 
+## Etapa 13 — Análisis de multicolinealidad (VIF)
+
+**Script:** `13_vif_analysis.py`  
+**Output:** `vif_report.pdf`, `vif_results.csv`
+
+### Objetivo
+Auditar la multicolinealidad entre features del modelo de regresión y verificar el salto R² Linear→Ridge reportado en Etapa 8.
+
+### Resultados VIF
+
+| Feature | VIF | Nivel |
+|---------|-----|-------|
+| log_energy | 513.5 | 🔴 Severo |
+| log_gdp | 376.3 | 🔴 Severo |
+| access_electricity_pct | 60.6 | 🔴 Severo |
+| acc_2000 | 30.0 | 🔴 Severo |
+| renewable_share_pct | 7.8 | 🟡 Moderado |
+| energy_intensity_mj_gdp | 7.8 | 🟡 Moderado |
+| lc_2000 | 3.7 | 🟢 Bajo |
+| gdp_growth_pct | 2.2 | 🟢 Bajo |
+
+### Correlaciones entre features de alto VIF
+
+| Par | r | Interpretación |
+|-----|---|----------------|
+| log_gdp ↔ log_energy | 0.914 | Países ricos consumen más energía — casi la misma variable |
+| access_2019 ↔ acc_2000 | 0.867 | Acceso 2019 y 2000 se mueven juntos |
+
+### Auditoría del salto Linear→Ridge
+
+Con mismo escalado y mismas features:
+- Linear: R² = 0.823
+- Ridge: R² = 0.824
+- Δ = +0.001
+
+**El salto R²=0.33→0.82 reportado en Etapa 8 era un bug de implementación** (distinto escalado o features entre modelos), no multicolinealidad. Son dos hallazgos distintos: la multicolinealidad severa ES real, pero no explica el salto reportado.
+
+La limitación de Etapa 8 se actualiza: el salto no es "probable causa de multicolinealidad" sino un bug confirmado. Con mismo preprocesamiento, Linear y Ridge son prácticamente equivalentes (Δ=0.001), como se esperaba con α=2.
+
+---
+
+## Etapa 14 — Matriz de transición 4×4
+
+**Script:** `14_transition_matrix.py`  
+**Output:** `transition_matrix_report.pdf`, `transition_matrix.csv`
+
+### Objetivo
+Visualizar la estructura completa de movimientos entre clusters energéticos entre 2000 y 2019 usando una matriz 4×4.
+
+### Metodología
+Centroides de 2019 aplicados hacia atrás a 2000 (consistente con Etapa 5). 172 países con datos completos en ambos años.
+
+### Matriz de transición (2000 → 2019)
+
+|  | → Emergentes | → Desarrollados | → Transición | → Pobreza |
+|--|-------------|-----------------|--------------|-----------|
+| Desde Emergentes | **51** | 10 | 6 | 0 |
+| Desde Desarrollados | 1 | **15** | 0 | 0 |
+| Desde Transición | 3 | 3 | **23** | 0 |
+| Desde Pobreza | 6 | 0 | 13 | **41** |
+
+- **Estables (diagonal):** 130 países (76%)
+- **Migraron:** 42 países (24%)
+- Ningún país migró hacia Pobreza energética en 20 años
+- Solo 1 país migró desde Desarrollados hacia abajo: **Japón**
+
+---
+
 ## Limitaciones conocidas del proyecto
 
 1. **Data leakage parcial en regresión.** El transition_score usa acceso, low_carbon y GDP. El modelo predice ese score usando las mismas variables. R²=0.82 está parcialmente inflado. El hallazgo real es path dependence, no capacidad predictiva pura.
 
-2. **Salto Linear→Ridge.** Diferencia de 0.49 en R² mayor a lo esperado con α=2. Probable causa: multicolinealidad severa entre features. Requiere auditoría formal.
+2. **Salto Linear→Ridge era un bug (auditado en Etapa 13).** El salto R²=0.33→0.82 reportado era un error de preprocesamiento. Con mismo escalado: Linear=0.823, Ridge=0.824, Δ=+0.001. La multicolinealidad severa SÍ existe (VIF>300 en log_energy y log_gdp) pero no explica el salto.
 
 3. **Imputación con mediana en clustering.** Nulos restantes imputados con mediana antes de K-Means. Puede distorsionar levemente los centroides. Alternativa preferible: KNN imputer o exclusión más agresiva.
 
@@ -393,6 +461,10 @@ Un país puede tener alto desarrollo con electricidad sucia (Qatar, EE.UU.) o ba
 | `weights_validation_report.pdf` | 11 | 3 gráficos comparación pesos |
 | `score_methods_comparison.csv` | 12 | Score V1/V2/V3 por país |
 | `score_methods_report.pdf` | 12 | 4 gráficos tres métodos |
+| `vif_results.csv` | 13 | VIF por feature del modelo |
+| `vif_report.pdf` | 13 | 2 gráficos auditoría multicolinealidad |
+| `transition_matrix.csv` | 14 | Migraciones entre clusters 2000→2019 |
+| `transition_matrix_report.pdf` | 14 | Heatmap 4×4 + flujos |
 | `project_log.md` | — | Este documento |
 
 ## Pipeline completo (en orden de ejecución)
@@ -411,6 +483,8 @@ Un país puede tener alto desarrollo con electricidad sucia (Qatar, EE.UU.) o ba
 10_validation_step4_visualize.py
 11_score_weights_validation.py
 12_score_methods_comparison.py
+13_vif_analysis.py
+14_transition_matrix.py
 ```
 
 ---
