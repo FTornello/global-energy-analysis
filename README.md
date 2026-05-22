@@ -148,6 +148,7 @@ python 08b_validation_step2b_gdp.py
 python 09_validation_step3_predict.py
 python 10_validation_step4_visualize.py
 python 11_score_weights_validation.py
+python 12_score_methods_comparison.py
 ```
 
 Each script prints a summary to the console and saves outputs to the working directory.
@@ -243,3 +244,22 @@ To answer this, we extracted the normalized coefficients that the Ridge model as
 - The 5 reference cases (Argentina, Spain, India, Japan, Cambodia) moved **0 or 1 position**
 
 The manual weights and the mathematically derived weights produce scores with near-perfect correlation. This validates that the conceptual reasoning behind the original weight choices was capturing the real structure of the data.
+
+---
+
+## Three-Method Score Weights Comparison
+
+**Script:** `12_score_methods_comparison.py`
+**Output:** `score_methods_report.pdf`, `score_methods_comparison.csv`
+
+Going further, we compared three methods for assigning weights to the transition_score:
+
+| Method | Access | Low-carbon | GDP | Description |
+|--------|--------|------------|-----|-------------|
+| V1 — Manual | 0.300 | 0.450 | 0.250 | Conceptual design decision |
+| V2 — Ridge  | 0.292 | 0.466 | 0.243 | Derived from regression model |
+| V3 — PCA    | 0.458 | 0.086 | 0.456 | First principal component |
+
+**Correlations between scores:** V1 vs V2: r = 0.9995 · V1 vs V3: r = 0.4995 · V2 vs V3: r = 0.4711
+
+**Why does PCA diverge?** PCA reveals two independent axes in the data. PC1 (58% variance) is a development axis — access and GDP move together. PC2 (33% variance) is a clean energy axis — low_carbon electricity is almost alone. Building a transition index that rewards clean energy independently of development requires an explicit conceptual decision that no algorithm can make on its own. This validates that assigning more weight to low_carbon (0.45) was deliberate, not arbitrary.
