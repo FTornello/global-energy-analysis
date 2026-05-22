@@ -1,0 +1,9 @@
+feature,label,VIF,severity,r2_impact
+log_energy,Energía per cápita (log),513.4566468651551,severo,ver diagnóstico
+log_gdp,GDP per cápita (log),376.2742771405044,severo,ver diagnóstico
+access_electricity_pct,Acceso electricidad 2019,60.57932146615948,severo,ver diagnóstico
+acc_2000,Acceso electricidad 2000,29.970896165964522,severo,ver diagnóstico
+renewable_share_pct,Renovables share,7.838873087507732,moderado,ver diagnóstico
+energy_intensity_mj_gdp,Intensidad energética,7.765484024879392,moderado,ver diagnóstico
+lc_2000,Low-carbon electricity 2000,3.7306563525294876,bajo,ver diagnóstico
+gdp_growth_pct,Crecimiento GDP,2.233512636581708,bajo,ver diagnóstico

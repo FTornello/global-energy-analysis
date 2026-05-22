@@ -1,21 +1,24 @@
-# Global Energy Transition Analysis (2000–2020)
+# Global Energy Transition Analysis (2000–2023)
 
-End-to-end data analytics project covering 176 countries and 21 years of sustainable energy indicators. From raw data cleaning to clustering, feature engineering, regression, and individual country case studies.
+> **Useful for:** ESG analysts evaluating country-level transition trajectories, development agencies prioritizing clean energy investments, and policy researchers studying energy path dependence.
+
+End-to-end data analytics project covering 176 countries and 24 years of sustainable energy indicators. From raw data cleaning to clustering, feature engineering, regression, out-of-sample validation, and methodological weight analysis.
 
 ---
 
-## What this project covers
+## Key visuals
 
-The dataset contains energy indicators for every country from 2000 to 2020: electricity access, renewable energy share, CO₂ emissions, energy intensity, GDP, and more. The goal was to understand how countries differ in their energy profiles, how they evolved over time, and what predicts a successful energy transition.
+**Where are countries and how fast are they improving?**
 
-**Pipeline:**
-1. Data cleaning and quality audit
-2. Exploratory data analysis (EDA)
-3. K-Means clustering — grouping countries by energy profile
-4. Temporal dynamics — tracking how clusters changed over 20 years
-5. Feature engineering — building 4 composite indicators
-6. Regression — predicting energy transition progress
-7. Case studies — deep-dive into 5 countries with notable trajectories
+![Transition score vs improvement rate quadrant](images/img_quadrant.png)
+
+**How did cluster composition change over 20 years?**
+
+![Cluster evolution 2000-2019](images/img_cluster_evolution.png)
+
+**Which countries changed energy profile and where did they go?**
+
+![Transition matrix 2000-2019](images/img_transition_matrix.png)
 
 ---
 
@@ -23,9 +26,9 @@ The dataset contains energy indicators for every country from 2000 to 2020: elec
 
 **The biomass paradox.** Countries with the least electricity access appear to have the highest renewable energy share — because traditional biomass (firewood, agricultural waste) counts as renewable. This is energy poverty, not energy transition. The correlation between electricity access and renewable share is r = −0.79.
 
-**Energy systems have enormous inertia.** In the regression model (R² = 0.82), the single strongest predictor of a country's 2019 energy profile is its low-carbon electricity percentage from the year 2000 — not GDP, not growth rate. Infrastructure decisions made 20+ years ago still define the matrix today.
+**Energy systems have enormous inertia.** In the regression model, the single strongest predictor of a country's 2019 energy profile is its low-carbon electricity percentage from the year 2000 — not GDP, not growth rate. Infrastructure decisions made 20+ years ago still define the matrix today.
 
-**42 out of 172 countries changed energy cluster between 2000 and 2019.** Most movements were upward (from energy poverty toward transition or developed), but 4 countries regressed — including Japan, whose low-carbon electricity dropped from 41% to 14% after Fukushima (2011).
+**76% of countries kept their energy cluster between 2000 and 2019.** Of the 42 that changed, most moved upward (toward clean transition or developed), with one notable exception: Japan, whose low-carbon electricity dropped from 41% to 14% after Fukushima (2011).
 
 **Cambodia is the most remarkable case in the dataset.** Starting from near zero (16% electricity access, GDP $300/capita in 2000), it achieved the highest improvement rate in the world (+2.40 pts/year) by building directly from renewables — no fossil system to dismantle.
 
@@ -51,14 +54,16 @@ Four composite variables built from the cleaned dataset:
 - **transition_score** — overall energy transition progress (0–100), weighted combination of electricity access, low-carbon electricity, and log(GDP)
 - **improvement_rate** — annual velocity of score improvement from 2000 to 2019
 - **clean_access_ratio** — quality of electricity access: penalizes dirty electrification
-- **fossil_lock_in** — structural dependency on fossil fuels, combining carbon share, energy intensity, and economic constraints
+- **fossil_lock_in** — structural dependency on fossil fuels
+
+**Weight validation:** the manually chosen weights (0.30 / 0.45 / 0.25) were validated against Ridge regression coefficients (r = 0.9995) and compared against PCA-derived weights. PCA reveals that electricity access + GDP and low-carbon electricity are structurally independent axes in the data — confirming that explicitly weighting clean energy was a deliberate design decision, not an arbitrary one.
 
 ---
 
 ## Regression model
 
-**Target:** `transition_score`
-**Best model:** Ridge Regression (R² = 0.822, MAE = 5.2 points, 5-fold CV)
+**Target:** `transition_score`  
+**Best model:** Ridge Regression (R² = 0.822, MAE = 5.22 points, 5-fold CV)
 
 | Feature | Importance |
 |---------|-----------|
@@ -66,9 +71,35 @@ Four composite variables built from the cleaned dataset:
 | Electricity access 2019 | 18.8% |
 | Energy per capita (log) | 15.1% |
 | GDP per capita (log) | 8.5% |
-| Other | 10.1% |
+| Other | 10.2% |
 
-Ridge outperformed Random Forest (R² = 0.768), indicating the relationships are largely linear. The dominance of the 2000 low-carbon variable confirms path dependency — where you start matters more than how fast you grow.
+**Known limitation:** the transition_score is partially composed of the same variables used as features (access, low-carbon, GDP), creating partial data leakage. The R²=0.82 reflects path dependence more than pure predictive power — which is itself the key finding: where a country starts energetically is the strongest predictor of where it ends up.
+
+**Multicollinearity audit (script 13):** VIF analysis confirms severe collinearity between log_gdp and log_energy (VIF > 300, r=0.914) and between access_2019 and access_2000 (VIF > 60, r=0.867). The previously reported R² gap between Linear (0.33) and Ridge (0.82) was a preprocessing bug — with identical scaling, both models yield R² ≈ 0.823.
+
+---
+
+## Out-of-sample validation (2021–2023)
+
+| Metric | Value |
+|--------|-------|
+| MAE original (2019, CV) | 5.22 points |
+| MAE validation — complete data (148 countries) | **9.28 points** |
+| MAE validation — all countries (176) | 21.25 points |
+
+The higher overall MAE is driven by the 44% of countries without GDP data in new sources — for those, the model predicts without its most important feature. The fair comparison is 9.28 vs 5.22: moderate degradation over a period that included COVID-19 and the 2022 energy crisis.
+
+The model correctly captured Japan's continued decline (−6.8 pts) and Spain's 2022 dip and 2023 recovery — confirming it has real signal, not just retrospective fit.
+
+---
+
+## Known limitations
+
+1. **Partial data leakage in regression** — transition_score components overlap with model features.
+2. **Severe multicollinearity** — log_gdp ↔ log_energy (r=0.914), access_2019 ↔ access_2000 (r=0.867).
+3. **Cluster 1 heterogeneity** — "Developed high-consumption" mixes Western Europe (transitioning) with Gulf states (not transitioning). Median more representative than mean.
+4. **Median imputation in clustering** — null values filled with feature medians before K-Means; may slightly bias centroids.
+5. **GDP coverage in validation** — 44% of countries lack GDP data for 2021–2023, inflating overall MAE.
 
 ---
 
@@ -79,10 +110,10 @@ Ridge outperformed Random Forest (R² = 0.768), indicating the relationships are
 | Python 3 | All analysis |
 | pandas | Data cleaning, manipulation |
 | numpy | Numerical transformations |
-| scikit-learn | K-Means clustering, Ridge, Random Forest, cross-validation |
-| matplotlib / seaborn | All charts and PDF reports |
+| scikit-learn | K-Means, Ridge, Random Forest, cross-validation |
+| statsmodels | VIF multicollinearity analysis |
+| matplotlib / seaborn | Charts and PDF reports |
 | D3.js + TopoJSON | Interactive choropleth map |
-| Chart.js | Interactive time series widgets |
 
 ---
 
@@ -92,34 +123,33 @@ Ridge outperformed Random Forest (R² = 0.768), indicating the relationships are
 global-energy-analysis/
 │
 ├── data/
-│   ├── global-data-on-sustainable-energy.csv   # original dataset (Kaggle)
-│   └── sustainable_energy_clean.csv            # cleaned output
+│   └── global-data-on-sustainable-energy.csv   # original dataset (Kaggle)
 │
-├── scripts/
+├── images/                                      # charts embedded in this README
+│   ├── img_quadrant.png
+│   ├── img_cluster_evolution.png
+│   └── img_transition_matrix.png
+│
+├── scripts/                                     # numbered in execution order
 │   ├── 01_clean_sustainable_energy.py
 │   ├── 02_eda_sustainable_energy.py
 │   ├── 03_clustering_dynamics.py
 │   ├── 04_feature_engineering.py
 │   ├── 05_regression_analysis.py
-│   └── 06_case_studies.py
+│   ├── 06_case_studies.py
+│   ├── 07_validation_step1_explore.py
+│   ├── 08_validation_step2_align.py
+│   ├── 08b_validation_step2b_gdp.py
+│   ├── 09_validation_step3_predict.py
+│   ├── 10_validation_step4_visualize.py
+│   ├── 11_score_weights_validation.py
+│   ├── 12_score_methods_comparison.py
+│   ├── 13_vif_analysis.py
+│   └── 14_transition_matrix.py
 │
-├── outputs/
-│   ├── cluster_assignments.csv
-│   ├── migration_log.csv
-│   ├── features_engineered.csv
-│   ├── regression_results.csv
-│   └── case_studies_summary.csv
-│
-├── reports/
-│   ├── eda_report.pdf
-│   ├── clustering_report.pdf
-│   ├── features_report.pdf
-│   ├── regression_report.pdf
-│   └── case_studies_report.pdf
-│
+├── outputs/                                     # CSV results
+├── reports/                                     # PDF reports
 ├── logs/
-│   └── cleaning_log.json
-│
 └── project_log.md
 ```
 
@@ -130,25 +160,30 @@ global-energy-analysis/
 Install dependencies:
 
 ```bash
-pip install pandas numpy matplotlib seaborn scikit-learn
+pip install pandas numpy matplotlib seaborn scikit-learn statsmodels
 ```
 
-Run scripts in order from the `scripts/` folder, with `sustainable_energy_clean.csv` in the working directory:
+**Required input:** place the original Kaggle dataset in `data/`:
+`global-data-on-sustainable-energy.csv` — available at [kaggle.com/datasets/anshtanwar/global-data-on-sustainable-energy](https://www.kaggle.com/datasets/anshtanwar/global-data-on-sustainable-energy)
+
+Run scripts in order from the `scripts/` folder:
 
 ```bash
-python 01_clean_sustainable_energy.py
+python 01_clean_sustainable_energy.py    # produces sustainable_energy_clean.csv
 python 02_eda_sustainable_energy.py
 python 03_clustering_dynamics.py
 python 04_feature_engineering.py
 python 05_regression_analysis.py
 python 06_case_studies.py
-python 07_validation_step1_explore.py
+python 07_validation_step1_explore.py   # requires internet connection
 python 08_validation_step2_align.py
 python 08b_validation_step2b_gdp.py
 python 09_validation_step3_predict.py
 python 10_validation_step4_visualize.py
 python 11_score_weights_validation.py
 python 12_score_methods_comparison.py
+python 13_vif_analysis.py
+python 14_transition_matrix.py
 ```
 
 Each script prints a summary to the console and saves outputs to the working directory.
@@ -159,107 +194,11 @@ Each script prints a summary to the console and saves outputs to the working dir
 
 [Global Data on Sustainable Energy — Kaggle](https://www.kaggle.com/datasets/anshtanwar/global-data-on-sustainable-energy)
 
-Covers 176 countries, 2000–2020, with indicators for electricity access, renewable energy, CO₂ emissions, energy intensity, financial flows, and economic growth.
+Covers 176 countries, 2000–2020. Validation extended to 2023 using Our World in Data and World Bank API.
 
 ---
 
 ## Author
 
-Francisco Tornello — Data Analytics project (2026)
-
----
-
-## Validation: Out-of-Sample Testing (2021–2023)
-
-The model trained on 2000–2020 data was tested against new data from 2021–2023 using two sources: Our World in Data (energy indicators) and World Bank (electricity access).
-
-### Data sources for validation
-- **Our World in Data** — energy dataset (github.com/owid/energy-data), updated through 2024
-- **World Bank API** — electricity access indicator (EG.ELC.ACCS.ZS)
-
-### Results
-
-| Metric | Value |
-|--------|-------|
-| MAE original (2019, CV) | 5.22 points |
-| MAE validation — complete data (148 countries) | **9.28 points** |
-| MAE validation — all countries (176) | 21.25 points |
-| Countries with complete data | 148 / 176 (56%) |
-
-The high MAE across all countries is driven by the 44% without GDP data — for those, the model had to predict without its most important feature. The fair comparison is 9.28 vs 5.22: moderate degradation over a period that included COVID-19 and the 2022 energy crisis.
-
-### Global trend (median transition_score)
-
-| Year | Score |
-|------|-------|
-| 2019 | 54.5 |
-| 2021 | 57.1 |
-| 2022 | 57.5 |
-| 2023 | 56.2 |
-
-The world continued improving through 2022, with a slight pullback in 2023 as residual effects of the energy crisis persisted.
-
-### 5 reference cases (2019 → 2023)
-
-| Country | 2019 | 2023 | Change |
-|---------|------|------|--------|
-| Japan | 62.7 | 55.9 | −6.8 |
-| Spain | 76.4 | 74.8 | −1.5 |
-| Cambodia | 58.8 | 60.0 | +1.2 |
-| Argentina | 60.4 | 60.9 | +0.4 |
-| India | 49.3 | 52.2 | +2.9 |
-
-**Japan** continued declining — fossil dependency post-Fukushima compounded by the 2022 gas crisis.
-**Spain** dipped in 2022 and recovered in 2023 — the crisis was visible but not structural.
-**India** kept improving slowly — solar expansion offsetting continued coal dependency.
-**Argentina** barely moved — consistent with its historical pattern of macro-driven stagnation.
-**Cambodia** slowed down in 2023 after strong growth — possible fossil expansion to sustain economic growth.
-
-### Validation scripts
-Scripts 07–10 in the `scripts/` folder cover the full validation pipeline:
-`07_validation_step1_explore.py` → `08_validation_step2_align.py` → `08b_validation_step2b_gdp.py` → `09_validation_step3_predict.py` → `10_validation_step4_visualize.py`
-
----
-
-## Score Weights Validation
-
-**Script:** `11_score_weights_validation.py`
-**Output:** `weights_validation_report.pdf`, `score_weights_comparison.csv`
-
-The `transition_score` was built using manually chosen weights (0.30 / 0.45 / 0.25). A natural question is: were those weights justified, or were they arbitrary?
-
-To answer this, we extracted the normalized coefficients that the Ridge model assigned to the same three variables independently, and compared them against our manual weights.
-
-| Variable | Manual (V1) | Ridge (V2) | Delta |
-|----------|-------------|------------|-------|
-| Electricity access | 0.300 | 0.292 | −0.008 |
-| Low-carbon electricity | 0.450 | 0.466 | +0.016 |
-| GDP per capita (log) | 0.250 | 0.243 | −0.007 |
-
-**Results:**
-- Correlation between score V1 and V2: **r = 0.9994**
-- Mean difference: **0.70 points** (on a 0–100 scale)
-- Maximum difference: **1.51 points**
-- Countries that changed more than 5 ranking positions: **11 / 175**
-- The 5 reference cases (Argentina, Spain, India, Japan, Cambodia) moved **0 or 1 position**
-
-The manual weights and the mathematically derived weights produce scores with near-perfect correlation. This validates that the conceptual reasoning behind the original weight choices was capturing the real structure of the data.
-
----
-
-## Three-Method Score Weights Comparison
-
-**Script:** `12_score_methods_comparison.py`
-**Output:** `score_methods_report.pdf`, `score_methods_comparison.csv`
-
-Going further, we compared three methods for assigning weights to the transition_score:
-
-| Method | Access | Low-carbon | GDP | Description |
-|--------|--------|------------|-----|-------------|
-| V1 — Manual | 0.300 | 0.450 | 0.250 | Conceptual design decision |
-| V2 — Ridge  | 0.292 | 0.466 | 0.243 | Derived from regression model |
-| V3 — PCA    | 0.458 | 0.086 | 0.456 | First principal component |
-
-**Correlations between scores:** V1 vs V2: r = 0.9995 · V1 vs V3: r = 0.4995 · V2 vs V3: r = 0.4711
-
-**Why does PCA diverge?** PCA reveals two independent axes in the data. PC1 (58% variance) is a development axis — access and GDP move together. PC2 (33% variance) is a clean energy axis — low_carbon electricity is almost alone. Building a transition index that rewards clean energy independently of development requires an explicit conceptual decision that no algorithm can make on its own. This validates that assigning more weight to low_carbon (0.45) was deliberate, not arbitrary.
+Francisco Tornello — Data Analytics portfolio project (2026)  
+[github.com/FTornello](https://github.com/FTornello)
