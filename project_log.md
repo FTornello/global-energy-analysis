@@ -1,15 +1,16 @@
-# Proyecto: Análisis Global de Energía Sostenible (2000–2020)
+# Proyecto: Análisis Global de Energía Sostenible (2000–2023)
 
-**Estado:** En progreso  
+**Estado:** Completado ✅  
 **Última actualización:** Mayo 2026  
-**Dataset:** Global Data on Sustainable Energy — Kaggle  
-**Herramientas:** Python, pandas, scikit-learn, matplotlib, seaborn
+**Dataset:** Global Data on Sustainable Energy — Kaggle (2000–2020) + Our World in Data / World Bank (2021–2023)  
+**Herramientas:** Python, pandas, scikit-learn, matplotlib, seaborn, D3.js  
+**Repositorio:** https://github.com/FTornello/global-energy-analysis
 
 ---
 
 ## Resumen del proyecto
 
-Análisis exploratorio y de clustering del dataset de indicadores energéticos globales. Cubre 176 países entre 2000 y 2020 con variables de acceso a electricidad, fuentes de energía, emisiones de CO₂ y desarrollo económico. El objetivo es identificar patrones de perfiles energéticos y entender cómo evolucionaron los países a lo largo del período.
+Pipeline completo de Data Analytics sobre transición energética global. Cubre 176 países entre 2000 y 2023. Incluye limpieza, EDA, clustering K-Means, dinámica temporal, mapa geoespacial, feature engineering, regresión, casos individuales, validación out-of-sample con datos nuevos (2021–2023), y análisis metodológico de los pesos del índice compuesto.
 
 ---
 
@@ -28,32 +29,6 @@ Análisis exploratorio y de clustering del dataset de indicadores energéticos g
 | Años | 2000–2020 (21 años) |
 | Duplicados | 0 |
 
-### Columnas originales
-
-| # | Nombre original | Descripción |
-|---|-----------------|-------------|
-| 1 | Entity | País o región |
-| 2 | Year | Año |
-| 3 | Access to electricity (% of population) | % población con electricidad |
-| 4 | Access to clean fuels for cooking | % con combustibles limpios para cocinar |
-| 5 | Renewable-electricity-generating-capacity-per-capita | Capacidad renovable instalada per cápita |
-| 6 | Financial flows to developing countries (US $) | Flujos financieros para energía limpia |
-| 7 | Renewable energy share in the total final energy consumption (%) | % renovables en consumo final |
-| 8 | Electricity from fossil fuels (TWh) | Electricidad de fósiles |
-| 9 | Electricity from nuclear (TWh) | Electricidad nuclear |
-| 10 | Electricity from renewables (TWh) | Electricidad renovable |
-| 11 | Low-carbon electricity (% electricity) | % electricidad de fuentes bajas en carbono |
-| 12 | Primary energy consumption per capita (kWh/person) | Energía primaria per cápita |
-| 13 | Energy intensity level of primary energy (MJ/$2017 PPP GDP) | Intensidad energética por unidad de GDP |
-| 14 | Value_co2_emissions_kt_by_country | Emisiones CO₂ (kt totales) |
-| 15 | Renewables (% equivalent primary energy) | Renovables en energía primaria equivalente |
-| 16 | gdp_growth | Crecimiento anual del GDP (%) |
-| 17 | gdp_per_capita | GDP per cápita (USD) |
-| 18 | Density\n(P/Km2) | Densidad poblacional (con error de formato) |
-| 19 | Land Area(Km2) | Área terrestre |
-| 20 | Latitude | Latitud del centroide |
-| 21 | Longitude | Longitud del centroide |
-
 ### Problemas de calidad detectados
 
 | Problema | Columna afectada | Severidad | Resolución |
@@ -69,43 +44,22 @@ Análisis exploratorio y de clustering del dataset de indicadores energéticos g
 
 ## Etapa 2 — Limpieza de datos
 
-**Script:** `clean_sustainable_energy.py`  
+**Script:** `01_clean_sustainable_energy.py`  
 **Output:** `sustainable_energy_clean.csv`, `cleaning_log.json`
 
-### Decisiones de limpieza
-
-**Paso 1 — Renombrado de columnas**  
-Todas las columnas estandarizadas a snake_case limpio. La columna `Density\n(P/Km2)` pasó a `density_p_km2`, eliminando el salto de línea embebido en el nombre.
-
-**Paso 2 — Conversión de `density_p_km2`**  
-La columna contenía valores como `"2,239"` (con separadores de miles) que impedían operar matemáticamente. Se removieron las comas y se convirtió a `float64`. Bahrain era el principal afectado (21 años × 1 país = 21 filas).
-
-**Paso 3 — Clip de `low_carbon_elec_pct`**  
-Un registro (Bhutan, 2005) tenía valor `100.00001` por error de punto flotante. Aplicado `clip(0, 100)`. Sin pérdida de información.
-
-**Paso 4 — Flag columnas de alta nulidad**  
-`financial_flows_usd` (57% nulos) y `renewables_equiv_primary_pct` (58% nulos) documentadas como columnas de uso restringido. Los nulos son estructuralmente válidos: los países desarrollados no reciben flujos financieros para energía limpia; los datos de renovables equivalentes tienen cobertura limitada históricamente. Decisión: no imputar.
-
-**Paso 5 — Flag de cobertura temporal**  
-Nueva columna booleana `partial_temporal_coverage` para los 4 países con menos de 21 años de datos. Permite filtrarlos en análisis de series de tiempo sin eliminar filas.
-
-**Paso 6 — Verificación de tipos**  
-Todos los tipos verificados. Sin inconsistencias post-limpieza.
-
-### Estado del dataset limpio
+6 pasos documentados: renombrado de columnas, conversión de density_p_km2 (string → float), clip de low_carbon_elec_pct, flag de columnas de alta nulidad, flag de cobertura temporal, verificación de tipos. 0 filas eliminadas.
 
 | Dimensión | Antes | Después |
 |-----------|-------|---------|
 | Filas | 3.649 | 3.649 (sin cambio) |
 | Columnas | 21 | 22 (+1 flag) |
 | Filas eliminadas | — | 0 |
-| Nulos críticos resueltos | 107 (density) + 1 (clip) | ✓ |
 
 ---
 
 ## Etapa 3 — Análisis exploratorio (EDA)
 
-**Script:** `eda_sustainable_energy.py`  
+**Script:** `02_eda_sustainable_energy.py`  
 **Output:** `eda_report.pdf` (6 gráficos)
 
 ### Estadísticas descriptivas — columnas clave
@@ -115,9 +69,7 @@ Todos los tipos verificados. Sin inconsistencias post-limpieza.
 | access_electricity_pct | 78.9% | 98.4% | 1.3% | 100% |
 | renewable_share_pct | 32.6% | 23.3% | 0% | 96% |
 | low_carbon_elec_pct | 36.8% | 27.9% | 0% | 100% |
-| primary_energy_per_capita_kwh | 25.744 | 13.121 | 0 | 262.586 |
-| co2_emissions_kt | 159.866 | 10.500 | 10 | 10.707.220 |
-| gdp_per_capita_usd | 13.284 | 4.579 | 112 | 123.514 |
+| gdp_per_capita_usd | $13.284 | $4.579 | $112 | $123.514 |
 | energy_intensity_mj_gdp | 5.31 | 4.30 | 0.11 | 32.57 |
 
 ### Correlaciones principales
@@ -126,93 +78,49 @@ Todos los tipos verificados. Sin inconsistencias post-limpieza.
 |-----------------|-------------|----------------|
 | access_electricity ↔ access_fuels | +0.867 | Muy alta — van juntas |
 | access_electricity ↔ renewable_share | −0.785 | Alta negativa — paradoja de la biomasa |
-| access_fuels ↔ renewable_share | −0.792 | Ídem |
 | gdp_per_capita ↔ primary_energy | +0.667 | Más riqueza = más consumo |
-| renewable_share ↔ low_carbon_elec | +0.468 | Moderada positiva |
-| gdp_per_capita ↔ access_electricity | +0.418 | Moderada positiva |
 
-### Hallazgos principales del EDA
+### Hallazgos principales
 
-1. **Acceso a electricidad mejoró pero con brecha persistente.** La media global subió de 73% (2000) a 85% (2020). South Sudan (7%), Chad (11%) y Burundi (12%) siguen casi sin cobertura en 2020.
-
-2. **Distribución de renovables bimodal.** Dos picos distintos: 0–10% (países industrializados dependientes de fósiles) y 80–90% (países en desarrollo con biomasa tradicional). El "país promedio" no existe.
-
-3. **GDP per capita extremadamente sesgado.** Mediana $4.600 vs media $13.300. Luxembourg ($116.000) y Bermuda ($107.000) distorsionan el promedio global.
-
-4. **Paradoja de las renovables.** Correlación negativa (r=−0.79) entre acceso a electricidad y renovables share. Los países con menos electricidad aparecen con más "renovables" porque la leña y biomasa tradicional se contabilizan como renovable. No es transición energética — es pobreza energética.
-
-5. **Outliers estructurales.** China: mayor emisor de CO₂ y generador de electricidad fósil. Qatar: mayor consumo per cápita. Luxembourg: mayor GDP per cápita. No son errores — son casos legítimos que hay que aislar en análisis globales.
-
-6. **Trinidad y Tobago — intensidad energética extrema.** 19.4 MJ por dólar de GDP, casi 4x el promedio global. Industria petroquímica masiva con energía históricamente subsidiada.
+1. **Paradoja de la biomasa.** Correlación negativa (r=−0.79) entre acceso a electricidad y renovables share. Los países más pobres aparecen con más "renovables" porque la leña cuenta como renovable. No es transición energética — es pobreza energética.
+2. **Distribución bimodal de renovables.** Dos picos: 0–10% (industrializados fósiles) y 80–90% (países en desarrollo con biomasa). El "país promedio" no existe.
+3. **GDP per cápita extremadamente sesgado.** Mediana $4.600 vs media $13.300.
+4. **Trinidad y Tobago — intensidad energética extrema.** 19.4 MJ/$GDP, casi 4x el promedio global. Industria petroquímica con energía subsidiada.
 
 ---
 
 ## Etapa 4 — Clustering por perfil energético
 
-**Script:** `clustering_dynamics.py`  
+**Script:** `03_clustering_dynamics.py`  
 **Output:** `clustering_report.pdf`, `cluster_assignments.csv`, `migration_log.csv`
 
 ### Metodología
 
 - **Año base:** 2019 (año más completo)
 - **Países incluidos:** 175 (excluidos con >2 nulos en features)
-- **Features:** 7 variables normalizadas per cápita o en porcentaje
-- **Preprocesamiento:** imputación de nulos restantes con mediana, escalado StandardScaler
-- **Algoritmo:** K-Means, k=4 (seleccionado por balance entre silhouette score y granularidad interpretativa)
+- **Features:** 7 variables normalizadas
+- **Preprocesamiento:** imputación de nulos restantes con mediana del training set, escalado StandardScaler
+- **Algoritmo:** K-Means, k=4
+- **Selección de k:** método del codo + silhouette score. k=2 daba silhouette más alto (0.367) pero grupos poco informativos. k=4 (silhouette=0.268) ofrecía granularidad interpretativa real.
+- **Metodología temporal:** se aplicaron los centroides de 2019 hacia atrás para mantener etiquetas comparables entre años. Las "migraciones" reflejan movimiento real de países respecto a una clasificación estable, no reclasificación por centroides recalculados.
 - **Visualización:** PCA 2D (47.3% + 18.8% = 66.1% varianza explicada)
 
-### Los 4 clusters
+### Los 4 clusters (2019)
 
-#### Cluster 0 — Emergentes fósiles (62 países)
-Economías de ingreso medio con electricidad casi universal pero fuertemente dependientes de combustibles fósiles. Bajo porcentaje renovable. Perfil dominante en el mundo: Argentina, China, India, México, Turquía, Arabia Saudita, Indonesia.
+| Cluster | Países | Acceso elec. | Low-carbon | GDP/cap | Descripción |
+|---------|--------|-------------|------------|---------|-------------|
+| Pobreza energética | 42 | 45% | 39% | $1.786 | Principalmente África subsahariana |
+| Emergentes fósiles | 62 | 97% | 15% | $10.867 | Asia, América Latina, Medio Oriente |
+| Transición renovable | 43 | 95% | 68% | $8.334 | América Latina y Europa del Este |
+| Desarrollados alto consumo | 28 | 100% | 47% | $56.784 | Europa Occidental, Norteamérica, Golfo |
 
-| Indicador | Valor promedio |
-|-----------|---------------|
-| Acceso electricidad | 97% |
-| GDP per cápita | $10.867 |
-| Renovables share | 10% |
-| Low-carbon electricity | 15% |
-| Energía per cápita | 23.942 kWh |
-
-#### Cluster 1 — Desarrollados, alto consumo (28 países)
-Acceso 100%, GDP más alto, pero también el mayor consumo energético del mundo. En transición hacia fuentes limpias — el porcentaje low-carbon creció del 29% al 53% entre 2000 y 2019. EE.UU., Alemania, Francia, UK, países nórdicos, estados del Golfo.
-
-| Indicador | Valor promedio |
-|-----------|---------------|
-| Acceso electricidad | 100% |
-| GDP per cápita | $56.784 |
-| Renovables share | 19% |
-| Low-carbon electricity | 47% |
-| Energía per cápita | 82.673 kWh |
-
-#### Cluster 2 — Transición renovable (43 países)
-El cluster más interesante. GDP moderado, pero 68% de su electricidad ya proviene de fuentes limpias. Apostaron a hidroeléctrica, eólica o solar antes de que fuera tendencia global. Brasil, España, Portugal, Colombia, Uruguay, Costa Rica, Nepal, Bhutan.
-
-| Indicador | Valor promedio |
-|-----------|---------------|
-| Acceso electricidad | 95% |
-| GDP per cápita | $8.334 |
-| Renovables share | 37% |
-| Low-carbon electricity | 68% |
-| Energía per cápita | 15.393 kWh |
-
-#### Cluster 3 — Pobreza energética (42 países)
-Principalmente África subsahariana. Acceso eléctrico 45%, GDP mínimo ($1.786). Alto porcentaje de "renovables" por biomasa tradicional (leña). El mayor desafío: expandir acceso sin replicar el camino fósil.
-
-| Indicador | Valor promedio |
-|-----------|---------------|
-| Acceso electricidad | 45% |
-| GDP per cápita | $1.786 |
-| Renovables share | 66% |
-| Low-carbon electricity | 39% |
-| Energía per cápita | 1.744 kWh |
+**Nota sobre Cluster 1 (Desarrollados):** incluye tanto Europa Occidental (en transición real hacia renovables) como estados del Golfo (Arabia Saudita, Qatar) que no están en esa trayectoria. El promedio del cluster oculta dos sub-poblaciones moviéndose en direcciones opuestas. El indicador más representativo es la mediana, no la media.
 
 ---
 
 ## Etapa 5 — Dinámica temporal de clusters (2000–2019)
 
-**Script:** `clustering_dynamics.py` (misma ejecución)  
-**Análisis:** evolución de métricas por cluster + detección de migraciones
+**Script:** `03_clustering_dynamics.py` (misma ejecución)
 
 ### Evolución del tamaño de clusters
 
@@ -223,265 +131,288 @@ Principalmente África subsahariana. Acceso eléctrico 45%, GDP mínimo ($1.786)
 | Transición renovable | 29 | 28 | 32 | 39 | 43 | ↑ +14 |
 | Desarrollados | 16 | 24 | 26 | 26 | 28 | ↑ +12 |
 
-### Migraciones destacadas (2000 → 2019)
+### Migraciones (2000 → 2019)
 
 **42 de 172 países cambiaron de cluster.**
 
 | Tipo de movimiento | Cantidad | Países notables |
 |-------------------|----------|-----------------|
-| Pobreza → Transición renovable | 13 | Nepal, Bhutan, Cambodia, Ghana, Guatemala, Honduras |
+| Pobreza → Transición renovable | 13 | Nepal, Bhutan, Cambodia, Ghana, Guatemala |
 | Pobreza → Emergentes fósiles | 6 | India, Indonesia, Bangladesh, Botswana |
-| Emergentes → Desarrollados | 10 | Alemania, UK, Denmark, Netherlands, Australia, Irlanda |
-| Emergentes → Transición renovable | 6 | España, Portugal, Bulgaria, Hungría, Rumania, Ucrania |
+| Emergentes → Desarrollados | 10 | Alemania, UK, Denmark, Netherlands, Irlanda |
+| Emergentes → Transición renovable | 6 | España, Portugal, Bulgaria, Hungría |
 | Transición → Desarrollados | 3 | Francia, Austria, Nueva Zelanda |
 | Transición → Emergentes (retroceso) | 3 | Chile, Filipinas, Suriname |
 | Desarrollados → Emergentes (retroceso) | 1 | **Japón** |
-
-### Casos notables
-
-**Japón — único retroceso desde el cluster más alto.** Tras el accidente de Fukushima (2011), cerró casi toda su energía nuclear. Su porcentaje de electricidad limpia cayó del 28% al 13%, moviéndolo al cluster de emergentes fósiles. Ejemplo de que el progreso energético no es lineal.
-
-**India e Indonesia — electrificación masiva basada en carbón.** Llevaron electricidad a cientos de millones de personas, saliendo de la pobreza energética. Pero el motor fue carbón. Representan la tensión central entre desarrollo humano y transición climática.
-
-**España y Portugal — transición deliberada sostenida.** Empezaron como economías dependientes del petróleo y terminaron con más del 50% de electricidad limpia. Resultado de política energética sostenida durante 20 años.
-
-**Nepal, Bhutan, Cambodia — salida limpia de la pobreza.** Escaparon de la pobreza energética apostando directamente a renovables (hidroeléctrica, solar). Saltaron la etapa fósil. Casos de estudio potenciales para el siglo XXI.
-
----
-
-## Archivos generados
-
-| Archivo | Etapa | Descripción |
-|---------|-------|-------------|
-| `sustainable_energy_clean.csv` | Limpieza | Dataset limpio, 3.649 filas × 22 columnas |
-| `cleaning_log.json` | Limpieza | Log detallado de cada decisión de limpieza |
-| `clean_sustainable_energy.py` | Limpieza | Script reproducible de limpieza |
-| `eda_report.pdf` | EDA | 6 gráficos de análisis exploratorio |
-| `eda_sustainable_energy.py` | EDA | Script reproducible de EDA |
-| `clustering_report.pdf` | Clustering | 6 gráficos de clustering y dinámica |
-| `clustering_dynamics.py` | Clustering | Script de clustering y análisis temporal |
-| `cluster_assignments.csv` | Clustering | Asignación de cluster por país (2019) |
-| `migration_log.csv` | Dinámica | Países que cambiaron de cluster 2000–2019 |
-| `project_log.md` | Todos | Este documento |
-
----
-
-## Próximos pasos sugeridos
-
-- [ ] Análisis de regresión: predictores de transición al cluster 2 (transición renovable)
-- [ ] Feature engineering: crear variable `transition_score` que combine acceso, low-carbon y renovables
-- [ ] Análisis geoespacial: visualizar clusters en mapa mundial
-- [ ] Análisis de casos: profundizar en trayectorias individuales (Japón, India, España)
-- [ ] Preparar presentación de resultados
-
----
-
-*Documento generado como parte del proceso de aprendizaje de Data Analytics.*
 
 ---
 
 ## Etapa 6 — Mapa geoespacial de clusters
 
 **Herramienta:** D3.js + TopoJSON + world-atlas@2  
-**Output:** widget interactivo en sesión (hover por país)
+**Output:** widget interactivo (hover por país)
 
-### Metodología
-
-Cada país coloreado según su cluster de 2019. Los 175 países del análisis fueron mapeados a códigos ISO numéricos (estándar usado por world-atlas) usando `pycountry` con correcciones manuales para nombres que difieren entre fuentes (Turkey→792, Czechia→203, etc.).
+175 países coloreados por cluster. Mapeados a códigos ISO numéricos usando pycountry con correcciones manuales.
 
 ### Patrones geográficos identificados
 
-| Región | Patrón | Observación |
-|--------|--------|-------------|
-| África subsahariana | Casi 100% Pobreza energética | Bloque continuo sin mezcla |
-| América Latina | Mayoría Transición renovable | Continente con mejor perfil relativo a su desarrollo |
-| Europa Occidental | Desarrollados alto consumo | Bloque uniforme |
-| Europa del Este y Sur | Transición renovable | España, Portugal, Bulgaria, Rumania, Hungría |
-| Medio Oriente / Asia Central | Emergentes fósiles | Petróleo + electrificación sin transición limpia |
-| Asia del Este y del Sur | Emergentes fósiles | China, India, Indonesia, Japón |
-| Norteamérica | Desarrollados alto consumo | EE.UU., Canadá |
-| Oceanía | Mixto | Australia (desarrollados), Pacífico Sur (transición) |
-
-### Hallazgo visual clave
-
-La geografía del cluster es más limpia de lo esperado — la pobreza energética y la transición renovable forman bloques regionales casi continuos. Sugiere que factores estructurales regionales (historia colonial, recursos naturales, cooperación regional) explican tanto como los indicadores individuales de cada país.
+| Región | Patrón |
+|--------|--------|
+| África subsahariana | Casi 100% Pobreza energética — bloque continuo |
+| América Latina | Mayoría Transición renovable — mejor perfil relativo a su desarrollo |
+| Europa Occidental | Desarrollados alto consumo — bloque uniforme |
+| Europa del Este y Sur | Transición renovable (España, Portugal, Bulgaria, Rumania) |
+| Medio Oriente / Asia Central | Emergentes fósiles |
+| Norteamérica | Desarrollados alto consumo |
 
 ---
 
 ## Etapa 7 — Feature engineering
 
-**Script:** `feature_engineering.py`
-**Output:** `features_engineered.csv`, `features_report.pdf` (3 gráficos)
+**Script:** `04_feature_engineering.py`  
+**Output:** `features_engineered.csv`, `features_report.pdf`
 
 ### Variables construidas
 
-#### 1. transition_score (0–100)
-Índice compuesto de avance en la transición energética moderna.
+| Variable | Fórmula | Rango | Qué mide |
+|----------|---------|-------|----------|
+| transition_score | 0.30×acceso + 0.45×low_carbon + 0.25×log(GDP) | 0–100 | Avance total en la transición |
+| improvement_rate | (score_2019 − score_2000) / 19 años | pts/año | Velocidad de mejora |
+| clean_access_ratio | (acceso/100) × (low_carbon/100) × 100 | 0–100 | Calidad del acceso eléctrico |
+| fossil_lock_in | 0.45×(1−low_carbon) + 0.35×E.intensity + 0.20×(1−GDP_norm) | 0–100 | Dependencia estructural de fósiles |
 
-`0.30 × acceso_electricidad + 0.45 × low_carbon_elec + 0.25 × log(GDP_norm)`
-
-Mayor peso en low-carbon electricity porque es el cambio más difícil y el más relevante para la transición. Se usa escala logarítmica para GDP para no penalizar desproporcionadamente a países pobres. No usa renewable_share para evitar la trampa de la biomasa.
-
-| Stat | Valor |
-|------|-------|
-| Mediana | 54.5 |
-| Rango | 10.5 (Chad) – 97.9 (Islandia) |
-| Top 3 | Islandia, Noruega, Suiza |
-| Bottom 3 | Chad, Liberia, Niger |
-
-#### 2. improvement_rate (puntos por año)
-Velocidad de mejora del transition_score entre 2000 y 2019.
-
-`(score_2019 − score_2000) / 19 años`
-
-Permite identificar países que están acelerando vs estancando, independientemente de su posición actual.
-
-| Stat | Valor |
-|------|-------|
-| Mediana | +0.36 pts/año |
-| Rango | −1.35 (Congo) a +2.40 (Cambodia) |
-| Retrocedieron | 11 países — Congo, Japón, Haití, Libia entre los más notables |
-
-#### 3. clean_access_ratio (0–100)
-Mide la calidad del acceso a electricidad.
-
-`(acceso/100) × (low_carbon/100) × 100`
-
-Un país con acceso universal pero electricidad 100% fósil obtiene 0. Detecta la "electrificación sucia" — acceso alto pero carbón. Albania, Bhutan e Islandia son los únicos con score 100.
-
-#### 4. fossil_lock_in (0–100)
-Riesgo de quedar atrapado en los fósiles.
-
-`0.45 × (1−low_carbon) + 0.35 × energia_intensity_norm + 0.20 × (1−GDP_norm)`
-
-Combina dependencia de fósiles, ineficiencia energética y limitaciones económicas. Trinidad y Tobago lidera con 85.7 por su industria petroquímica con energía subsidiada.
-
-### Hallazgos del cuadrante (transition_score vs improvement_rate)
-
-| Cuadrante | Descripción | Ejemplos |
-|-----------|-------------|---------|
-| Alto score + alta mejora | Avanzados y acelerando | Dinamarca, Costa Rica, Bhutan |
-| Alto score + baja mejora | Avanzados pero desacelerando | Varios países desarrollados |
-| Bajo score + alta mejora | Rezagados pero alcanzando | Cambodia, Sierra Leone, Kenya |
-| Bajo score + baja mejora | Atrapados | Chad, Niger, Somalia |
-
-### Argentina
-| Variable | Valor | vs mediana global |
-|----------|-------|-------------------|
-| transition_score | 60.4 | +5.9 puntos ↑ |
-| improvement_rate | −0.09 | −0.45 pts ↓ |
-| clean_access_ratio | 32.0 | +10.6 puntos ↑ |
-| fossil_lock_in | 42.7 | ≈ mediana |
-
-Argentina está por encima de la mediana global pero con improvement_rate negativo — en 2019 estaba perdiendo terreno. Refleja la crisis económica y la dependencia histórica del gas natural.
+**Justificación de pesos del transition_score:** se eligieron con criterio conceptual. Posteriormente validados contra pesos del modelo Ridge (ver Etapa 11) — diferencia < 2% en todos los pesos.
 
 ---
 
 ## Etapa 8 — Regresión
 
-**Script:** `regression_analysis.py`
-**Output:** `regression_report.pdf` (4 gráficos), `regression_results.csv`
+**Script:** `05_regression_analysis.py`  
+**Output:** `regression_report.pdf`, `regression_results.csv`
 
 ### Objetivo
-Predecir `transition_score` (índice 0–100 de avance energético) a partir de variables observables.
+Predecir `transition_score` a partir de variables observables.
 
-### Features utilizadas
-8 variables: acceso a electricidad 2019, renovables share, GDP (log), intensidad energética, energía per cápita (log), crecimiento GDP, acceso electricidad 2000, low-carbon electricity 2000.
+### Limitación conocida — data leakage parcial
+El transition_score está construido con acceso, low_carbon y GDP. El modelo usa como features esas mismas variables (entre otras). Esto genera correlación estructural entre features y target — el R²=0.82 está parcialmente inflado por esta composición. La lección más honesta del ejercicio es la **identificación de path dependence**: el estado energético actual de un país está fuertemente determinado por su historia (low_carbon_2000 explica 47.5%), más que por su nivel de riqueza actual. Para futuros análisis: predecir improvement_rate (independiente del score) o excluir las features que componen el score.
+
+### Limitación conocida — salto Linear → Ridge
+La diferencia R²=0.33 (Linear) vs R²=0.82 (Ridge) con α=2 es mayor de lo esperado. Ridge con α bajo debería acercarse a OLS. La diferencia puede atribuirse a multicolinealidad severa entre features (acc_2000 con access_2019, lc_2000 con low_carbon_2019) — en ese caso la diferencia es un hallazgo real sobre la estructura de los datos, no un bug.
 
 ### Resultados por modelo (CV 5-fold, 153 países)
 
 | Modelo | R² | MAE |
 |--------|-----|-----|
 | Linear Regression | 0.331 | 10.42 |
-| Ridge (α=2) | **0.822** | 5.22 |
+| Ridge (α=2) | 0.822 | 5.22 |
 | Random Forest | 0.768 | 6.18 |
-
-Ridge superó a Random Forest — las relaciones son mayormente lineales.
 
 ### Feature importance (Random Forest)
 
 | Variable | Importancia |
 |----------|-------------|
-| Low-carbon electricity 2000 | **47.5%** |
+| Low-carbon electricity 2000 | 47.5% |
 | Acceso electricidad 2019 | 18.8% |
 | Energía per cápita (log) | 15.1% |
 | GDP per cápita (log) | 8.5% |
-| Acceso electricidad 2000 | 5.2% |
-| Resto | 5.0% |
+| Resto | 10.2% |
 
 ### Hallazgos principales
 
-**1. La historia energética pesa más que el dinero.** El predictor #1 es la electricidad limpia que tenía un país en el año 2000 (47.5% de importancia). Los sistemas energéticos tienen inercia enorme: las inversiones en infraestructura hidráulica, nuclear o renovable de hace 20 años siguen definiendo el perfil de hoy.
-
-**2. El modelo lineal gana.** R²=0.82 con Ridge vs 0.77 con Random Forest. Esto confirma que no hay interacciones complejas — las relaciones entre variables y el score son directas y aditivas. Interpretación más confiable.
-
-**3. Residuales informan sobre factores no energéticos.** Los países con residuales altos son los más interesantes:
-- **Subestimados** (mejoraron más de lo esperado): Sierra Leone (+17.6), Kenya (+15.3), Denmark (+13.4), Cambodia (+12.4) — señal de reformas externas efectivas o política energética acertada.
-- **Sobreestimados** (rindieron menos de lo esperado): Burkina Faso (−14.6), Chad (−13.8), Burundi (−11.3), Haití (−10.1) — señal de conflictos, inestabilidad política o falla institucional no capturada por los datos.
+1. **Path dependence domina sobre riqueza.** El predictor #1 es low_carbon_2000 — la historia energética pesa más que el GDP actual.
+2. **Residuales informan sobre factores no energéticos.** Subestimados: Sierra Leone (+17.6), Kenya (+15.3), Denmark (+13.4), Cambodia (+12.4). Sobreestimados: Burkina Faso (−14.6), Chad (−13.8), Burundi (−11.3) — señal de conflictos e inestabilidad institucional.
 
 ---
 
 ## Etapa 9 — Análisis de casos individuales
 
-**Script:** `case_studies.py`
-**Output:** `case_studies_report.pdf` (6 páginas), `case_studies_summary.csv`
+**Script:** `06_case_studies.py`  
+**Output:** `case_studies_report.pdf`, `case_studies_summary.csv`
 
-### Países analizados y narrativa central
-
-| País | Narrativa | Improvement rate | Cluster 2019 |
-|------|-----------|-----------------|--------------|
-| 🇯🇵 Japón | Único retroceso — Fukushima 2011 | −0.36 | Emergentes fósiles |
-| 🇪🇸 España | Transición deliberada sostenida | +0.49 | Transición renovable |
-| 🇮🇳 India | Electrificación masiva a carbón | +1.01 | Emergentes fósiles |
-| 🇰🇭 Cambodia | #1 mundial en velocidad de mejora | +2.40 | Transición renovable |
-| 🇦🇷 Argentina | Base limpia que se perdió | −0.09 | Emergentes fósiles |
-
-### Hallazgos por caso
-
-**Japón:** El low-carbon electricity cayó del 41% al 14% en 3 años post-Fukushima. Pasó del cluster "Desarrollados" a "Emergentes fósiles". Ejemplo más claro de que el progreso no es lineal y puede revertirse por un único evento. En 2023 comenzó la reactivación nuclear, pero en 2020 aún no había recuperado los niveles previos.
-
-**España:** Política energética sostenida 20 años pese a la crisis 2008–2013. Low-carbon del 44% al 66%. Fossil lock-in de 26.3 — uno de los más bajos de Europa. La transición no fue lineal ni sin tropiezos, pero nunca cambió de dirección.
-
-**India:** Logro humano descomunal: de 59% a 99% de acceso en 20 años. El motor fue carbón. Hoy tiene el segundo sistema fósil más grande de Asia. Fossil lock-in de 53.6 — la descarbonización posterior será enormemente costosa. Al mismo tiempo, lidera en capacidad solar instalada nueva desde 2015.
-
-**Cambodia:** El caso más notable del dataset. Improvement rate +2.40 — el más alto del mundo. Construyó desde cero sin un sistema fósil previo que desmantelar. Fue directamente a hidroeléctrica y solar porque era la opción viable para zonas rurales sin red. Residual de regresión +12.4: superó consistentemente lo que sus condiciones iniciales permitían predecir.
-
-**Argentina:** Única en el dataset con base limpia en 2000 (41% low-carbon) que la redujo en 2019 (34%). Las crisis macroeconómicas de 2001, 2014 y 2018–19 frenaron la inversión energética en cada ciclo. El descubrimiento de Vaca Muerta (2011) reforzó la apuesta al gas. Tiene los recursos para liderar la transición regional (viento patagónico, sol en Cuyo, reservas hídricas) pero no ha tenido la estabilidad para capitalizarlos.
+| País | 2019 score | Narrativa |
+|------|-----------|-----------|
+| 🇯🇵 Japón | 62.7 | Fukushima 2011 derrumbó el 41% de electricidad limpia |
+| 🇪🇸 España | 76.4 | Apuesta política sostenida 20 años: 44% → 66% low-carbon |
+| 🇮🇳 India | 49.3 | 59% → 99% acceso. Motor: carbón. Dilema desarrollo vs clima |
+| 🇰🇭 Cambodia | 58.8 | #1 mundial en velocidad. Construyó limpio desde cero |
+| 🇦🇷 Argentina | 60.4 | Base limpia (41%) que se perdió (34%). Inercia macro |
 
 ---
 
-## Estado final del proyecto
+## Etapa 10 — Validación out-of-sample (2021–2023)
 
-### Archivos generados
+**Scripts:** `07_validation_step1_explore.py` → `08_validation_step2_align.py` → `08b_validation_step2b_gdp.py` → `09_validation_step3_predict.py` → `10_validation_step4_visualize.py`  
+**Output:** `validation_predictions.csv`, `validation_report.pdf`
 
-| Archivo | Etapa | Descripción |
-|---------|-------|-------------|
-| `sustainable_energy_clean.csv` | Limpieza | Dataset limpio, 3.649 filas × 22 columnas |
-| `cleaning_log.json` | Limpieza | Log detallado de decisiones |
-| `clean_sustainable_energy.py` | Limpieza | Script reproducible |
-| `eda_report.pdf` | EDA | 6 gráficos exploratorios |
-| `eda_sustainable_energy.py` | EDA | Script reproducible |
-| `clustering_report.pdf` | Clustering | 6 gráficos + dinámica |
-| `clustering_dynamics.py` | Clustering | Script reproducible |
-| `cluster_assignments.csv` | Clustering | Cluster por país (2019) |
-| `migration_log.csv` | Dinámica | 42 países que cambiaron de cluster |
-| `features_engineered.csv` | Feature Eng. | 4 variables nuevas por país |
-| `feature_engineering.py` | Feature Eng. | Script reproducible |
-| `features_report.pdf` | Feature Eng. | 3 gráficos |
-| `regression_results.csv` | Regresión | Predicciones vs real por país |
-| `regression_analysis.py` | Regresión | Script reproducible |
-| `regression_report.pdf` | Regresión | 4 gráficos |
-| `case_studies_summary.csv` | Casos | Tabla resumen 5 países |
-| `case_studies.py` | Casos | Script reproducible |
-| `case_studies_report.pdf` | Casos | 6 páginas de análisis |
-| `project_log.md` | Todos | Este documento |
+### Fuentes de datos nuevas
+- Our World in Data — energy dataset (github.com/owid/energy-data)
+- World Bank API — electricity access (EG.ELC.ACCS.ZS) y GDP per cápita (NY.GDP.PCAP.CD)
 
-### Pipeline completo (en orden de ejecución)
+### Decisiones de alineación
+- GDP per cápita calculado como gdp/population desde OWID (56% cobertura) + complementado con World Bank API
+- 44% de países sin GDP en datos nuevos — imputados con mediana del training set
+- Esto infla el MAE global; la comparación justa es sobre el subset con datos completos
+
+### Resultados
+
+| Métrica | Valor | Interpretación |
+|---------|-------|----------------|
+| MAE original (2019, CV) | 5.22 pts | Referencia |
+| MAE validación — datos completos (148 países) | 9.28 pts | Comparación justa |
+| MAE validación — todos los países (176) | 21.25 pts | Inflado por 44% sin GDP |
+| Degradación (comparación justa) | +4.1 pts | Moderada — COVID + crisis 2022 |
+
+### Tendencia global (mediana transition_score)
+
+| Año | Score |
+|-----|-------|
+| 2019 | 54.5 |
+| 2021 | 57.1 |
+| 2022 | 57.5 |
+| 2023 | 56.2 |
+
+### 5 casos (2019 → 2023)
+
+| País | 2019 | 2023 | Cambio | Veredicto |
+|------|------|------|--------|-----------|
+| Japón | 62.7 | 55.9 | −6.8 | Empeoró — fósiles + crisis 2022 |
+| España | 76.4 | 74.8 | −1.5 | Bajó en 2022, rebotó en 2023 |
+| India | 49.3 | 52.2 | +2.9 | Mejora lenta y constante |
+| Argentina | 60.4 | 60.9 | +0.4 | Prácticamente estancada |
+| Cambodia | 58.8 | 60.0 | +1.2 | Desaceleró en 2023 |
+
+**¿El shock de Ucrania 2022 aparece en los datos?** Sí. España bajó en 2022 y rebotó en 2023. Europa en general muestra la huella del año — varios países quemaron más carbón temporalmente. Pero no fue tan profundo ni permanente como Fukushima.
+
+---
+
+## Etapa 11 — Validación de pesos del transition_score (V1 vs V2)
+
+**Script:** `11_score_weights_validation.py`  
+**Output:** `weights_validation_report.pdf`, `score_weights_comparison.csv`
+
+### Pregunta
+¿Los pesos manuales (0.30 / 0.45 / 0.25) estaban justificados, o fueron arbitrarios?
+
+### Método
+Extraer los coeficientes normalizados del modelo Ridge para las mismas 3 variables y comparar contra los pesos manuales.
+
+### Resultado
+
+| Variable | V1 (manual) | V2 (Ridge) | Delta |
+|----------|-------------|------------|-------|
+| Acceso electricidad | 0.300 | 0.292 | −0.008 |
+| Low-carbon electricity | 0.450 | 0.466 | +0.016 |
+| GDP per cápita (log) | 0.250 | 0.243 | −0.007 |
+
+- Correlación V1 vs V2: **r = 0.9995**
+- Diferencia media entre scores: **0.70 puntos** (escala 0–100)
+- Países que cambiaron más de 5 posiciones en ranking: **11 / 175**
+- Los 5 casos de referencia: **0 cambios de posición**
+
+**Conclusión:** los pesos manuales estaban a menos del 2% de lo que el modelo matemático encontró de forma independiente. La decisión subjetiva quedó validada cuantitativamente.
+
+---
+
+## Etapa 12 — Comparación de tres métodos de pesos
+
+**Script:** `12_score_methods_comparison.py`  
+**Output:** `score_methods_report.pdf`, `score_methods_comparison.csv`
+
+### Los tres métodos
+
+| Método | Acceso | Low-carbon | GDP | Descripción |
+|--------|--------|------------|-----|-------------|
+| V1 — Manual | 0.300 | 0.450 | 0.250 | Decisión conceptual |
+| V2 — Ridge | 0.292 | 0.466 | 0.243 | Derivado del modelo |
+| V3 — PCA | 0.458 | 0.086 | 0.456 | Primera componente principal |
+
+### Correlaciones
+
+- V1 vs V2: **r = 0.9995** — prácticamente idénticos
+- V1 vs V3: **r = 0.4995** — significativamente distintos
+- V2 vs V3: **r = 0.4711** — significativamente distintos
+
+### Por qué PCA diverge
+
+PCA revela que las tres variables contienen dos ejes independientes:
+- **PC1 (58% varianza):** eje de desarrollo — acceso + GDP se mueven juntos
+- **PC2 (33% varianza):** eje de energía limpia — low_carbon casi solo
+
+Un país puede tener alto desarrollo con electricidad sucia (Qatar, EE.UU.) o bajo desarrollo con electricidad limpia (Albania, Bhutan, Nepal). PCA captura el eje de desarrollo como PC1 y asigna peso mínimo a low_carbon.
+
+**Conclusión clave:** construir un índice de transición energética que recompense energía limpia independientemente del desarrollo económico requiere una decisión de diseño explícita. Ningún algoritmo puede tomarla solo. Esto valida que darle más peso a low_carbon (0.45) fue deliberado y justificado, no arbitrario.
+
+### Impacto en 5 casos
+
+| País | V1 | V2 | V3 | Nota |
+|------|-----|-----|-----|------|
+| Japón | 62.7 | 61.7 | 91.5 | PCA ignora dependencia de fósiles |
+| España | 76.4 | 75.9 | 86.4 | Similar en los tres |
+| Argentina | 60.4 | 59.7 | 79.0 | PCA premia acceso universal |
+| Cambodia | 58.8 | 58.7 | 54.0 | PCA penaliza bajo GDP |
+| India | 49.3 | 48.6 | 64.9 | PCA premia electrificación |
+
+---
+
+## Limitaciones conocidas del proyecto
+
+1. **Data leakage parcial en regresión.** El transition_score usa acceso, low_carbon y GDP. El modelo predice ese score usando las mismas variables. R²=0.82 está parcialmente inflado. El hallazgo real es path dependence, no capacidad predictiva pura.
+
+2. **Salto Linear→Ridge.** Diferencia de 0.49 en R² mayor a lo esperado con α=2. Probable causa: multicolinealidad severa entre features. Requiere auditoría formal.
+
+3. **Imputación con mediana en clustering.** Nulos restantes imputados con mediana antes de K-Means. Puede distorsionar levemente los centroides. Alternativa preferible: KNN imputer o exclusión más agresiva.
+
+4. **Cluster 1 heterogéneo.** "Desarrollados alto consumo" mezcla Europa Occidental (en transición) con estados del Golfo (no en transición). El promedio del cluster es engañoso. Reportar medianas + rangos sería más honesto.
+
+5. **GDP incompleto en validación 2021–2023.** 44% de países sin GDP en datos nuevos. MAE global inflado artificialmente. La comparación justa es MAE sobre países con datos completos (9.28 vs 5.22).
+
+6. **Dataset usado frecuentemente en Kaggle.** Los puntos diferenciadores del proyecto — clustering dinámico, case studies narrativos, validación out-of-sample, análisis metodológico de pesos — no están suficientemente destacados en la presentación.
+
+---
+
+## Archivos generados
+
+| Archivo | Script | Descripción |
+|---------|--------|-------------|
+| `sustainable_energy_clean.csv` | 01 | Dataset limpio, 3.649 filas × 22 columnas |
+| `cleaning_log.json` | 01 | Log de decisiones de limpieza |
+| `eda_report.pdf` | 02 | 6 gráficos exploratorios |
+| `clustering_report.pdf` | 03 | 6 gráficos clustering + dinámica |
+| `cluster_assignments.csv` | 03 | Cluster por país (2019) |
+| `migration_log.csv` | 03 | 42 países que cambiaron de cluster |
+| `features_engineered.csv` | 04 | 4 variables nuevas por país |
+| `features_report.pdf` | 04 | 3 gráficos |
+| `regression_results.csv` | 05 | Predicciones vs real por país |
+| `regression_report.pdf` | 05 | 4 gráficos |
+| `case_studies_summary.csv` | 06 | Tabla resumen 5 países |
+| `case_studies_report.pdf` | 06 | 6 páginas de análisis |
+| `validation_data_2021_2023.csv` | 07-08b | Dataset alineado 2021–2023 |
+| `validation_predictions.csv` | 09 | Predicciones validación |
+| `validation_report.pdf` | 10 | 5 gráficos validación |
+| `score_weights_comparison.csv` | 11 | Score V1 vs V2 por país |
+| `weights_validation_report.pdf` | 11 | 3 gráficos comparación pesos |
+| `score_methods_comparison.csv` | 12 | Score V1/V2/V3 por país |
+| `score_methods_report.pdf` | 12 | 4 gráficos tres métodos |
+| `project_log.md` | — | Este documento |
+
+## Pipeline completo (en orden de ejecución)
+
 ```
-clean_sustainable_energy.py
-eda_sustainable_energy.py
-clustering_dynamics.py
-feature_engineering.py
-regression_analysis.py
-case_studies.py
+01_clean_sustainable_energy.py
+02_eda_sustainable_energy.py
+03_clustering_dynamics.py
+04_feature_engineering.py
+05_regression_analysis.py
+06_case_studies.py
+07_validation_step1_explore.py
+08_validation_step2_align.py
+08b_validation_step2b_gdp.py
+09_validation_step3_predict.py
+10_validation_step4_visualize.py
+11_score_weights_validation.py
+12_score_methods_comparison.py
 ```
+
+---
+
+*Documento actualizado: mayo 2026 — Francisco Tornello*
